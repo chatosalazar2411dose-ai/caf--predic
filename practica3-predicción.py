@@ -34,6 +34,9 @@ def init_session_state():
         st.session_state.show_history = False
     if 'show_recommendations' not in st.session_state:
         st.session_state.show_recommendations = False
+    # NUEVO: Estado para controlar si mostrar login o registro
+    if 'show_register' not in st.session_state:
+        st.session_state.show_register = False
     # NUEVO: Inicializar modo de visualización
     if 'modo' not in st.session_state:
         st.session_state.modo = "visualizacion"
@@ -121,8 +124,10 @@ def logout_user():
             st.session_state[key] = None if key not in ['logged_in', 'show_history', 'show_recommendations'] else False
     st.rerun()
 
-# ========== INTERFAZ DE LOGIN ==========
+# ========== INTERFAZ DE LOGIN MODIFICADA ==========
 def show_login_ui():
+    """Muestra la interfaz de login/registro con botones alternativos"""
+    
     st.markdown("""
     <style>
     .stApp {
@@ -148,60 +153,91 @@ def show_login_ui():
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        <div style='background:black; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);'>
-        """, unsafe_allow_html=True)
-        st.subheader("🔐 Iniciar Sesión")
-        email = st.text_input("📧 Email", placeholder="demo@cafe.com", key="login_email")
-        password = st.text_input("🔒 Contraseña", type="password", placeholder="••••••••", key="login_pass")
+    # Mostrar formulario de LOGIN o REGISTRO según el estado
+    if not st.session_state.show_register:
+        # ========== FORMULARIO DE LOGIN ==========
+        col1, col2, col3 = st.columns([1, 2, 1])
         
-        if st.button("🚪 Iniciar Sesión", use_container_width=True):
-            if email and password:
-                user_data = authenticate_user(email, password)
-                if user_data:
-                    st.session_state.logged_in = True
-                    st.session_state.user_email = email
-                    st.session_state.user_name = email.split('@')[0]
-                    st.success("✅ Login exitoso")
+        with col2:
+            st.markdown("""
+            <div style='background: black; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border: 1px solid #6F4E37;'>
+            """, unsafe_allow_html=True)
+            st.subheader("🔐 Iniciar Sesión")
+            
+            email = st.text_input("📧 Email", placeholder="tu@email.com", key="login_email")
+            password = st.text_input("🔒 Contraseña", type="password", placeholder="••••••••", key="login_pass")
+            
+            col_btn1, col_btn2 = st.columns(2)
+            
+            with col_btn1:
+                if st.button("🚪 Iniciar Sesión", use_container_width=True):
+                    if email and password:
+                        user_data = authenticate_user(email, password)
+                        if user_data:
+                            st.session_state.logged_in = True
+                            st.session_state.user_email = email
+                            st.session_state.user_name = email.split('@')[0]
+                            st.success("✅ Login exitoso")
+                            st.rerun()
+                    else:
+                        st.warning("⚠️ Ingresa email y contraseña")
+            
+            with col_btn2:
+                if st.button("📝 ¿No tienes cuenta? Regístrate", use_container_width=True):
+                    # Cambiar a modo registro
+                    st.session_state.show_register = True
                     st.rerun()
-            else:
-                st.warning("⚠️ Ingresa email y contraseña")
-        
-        st.caption("🔧 Credenciales de prueba: demo@cafe.com / demo123 (debes crearlo primero)")
-        st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
     
-    with col2:
-        st.markdown("""
-        <div style='background:black; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);'>
-        """, unsafe_allow_html=True)
-        st.subheader("📝 Registrarse")
-        new_name = st.text_input("👤 Nombre completo", placeholder="Tu nombre", key="reg_name")
-        new_email = st.text_input("📧 Email", placeholder="tu@email.com", key="reg_email")
-        new_password = st.text_input("🔒 Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
-        confirm_password = st.text_input("🔒 Confirmar contraseña", type="password", key="reg_confirm")
+    else:
+        # ========== FORMULARIO DE REGISTRO ==========
+        col1, col2, col3 = st.columns([1, 2, 1])
         
-        if st.button("📝 Registrarse", use_container_width=True):
-            if not new_name:
-                st.warning("⚠️ Ingresa tu nombre")
-            elif not new_email:
-                st.warning("⚠️ Ingresa tu email")
-            elif not new_password:
-                st.warning("⚠️ Ingresa una contraseña")
-            elif len(new_password) < 6:
-                st.warning("⚠️ La contraseña debe tener al menos 6 caracteres")
-            elif new_password != confirm_password:
-                st.warning("⚠️ Las contraseñas no coinciden")
-            else:
-                success, message = register_user(new_email, new_password, new_name)
-                if success:
-                    st.success(message)
+        with col2:
+            st.markdown("""
+            <div style='background: black; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border: 1px solid #6F4E37;'>
+            """, unsafe_allow_html=True)
+            st.subheader("📝 Crear una cuenta nueva")
+            
+            new_name = st.text_input("👤 Nombre completo", placeholder="Tu nombre", key="reg_name")
+            new_email = st.text_input("📧 Email", placeholder="tu@email.com", key="reg_email")
+            new_password = st.text_input("🔒 Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
+            confirm_password = st.text_input("🔒 Confirmar contraseña", type="password", key="reg_confirm")
+            
+            col_btn_reg1, col_btn_reg2 = st.columns(2)
+            
+            with col_btn_reg1:
+                if st.button("✅ Crear cuenta", use_container_width=True):
+                    if not new_name:
+                        st.warning("⚠️ Ingresa tu nombre")
+                    elif not new_email:
+                        st.warning("⚠️ Ingresa tu email")
+                    elif not new_password:
+                        st.warning("⚠️ Ingresa una contraseña")
+                    elif len(new_password) < 6:
+                        st.warning("⚠️ La contraseña debe tener al menos 6 caracteres")
+                    elif new_password != confirm_password:
+                        st.warning("⚠️ Las contraseñas no coinciden")
+                    else:
+                        with st.spinner("Creando usuario..."):
+                            success, message = register_user(new_email, new_password, new_name)
+                            if success:
+                                st.success("✅ ¡Registro exitoso! Ahora inicia sesión.")
+                                import time
+                                time.sleep(2)
+                                st.session_state.show_register = False
+                                st.rerun()
+                            else:
+                                st.error(message)
+            
+            with col_btn_reg2:
+                if st.button("🔙 Volver al inicio de sesión", use_container_width=True):
+                    # Volver al login sin registrarse
+                    st.session_state.show_register = False
                     st.rerun()
-                else:
-                    st.error(message)
-        st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ========== APLICACIÓN PRINCIPAL ==========
 def main_app():
