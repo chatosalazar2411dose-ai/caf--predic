@@ -314,7 +314,6 @@ def main_app():
     """, unsafe_allow_html=True)
     
     # Mensaje de bienvenida
-    st.balloons()
     st.success(f"✨ ¡Bienvenido/a {st.session_state.get('user_name', 'Usuario')}! ☕")
     
     # Cargar datos
