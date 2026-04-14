@@ -111,7 +111,7 @@ def show_login_ui():
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: linear-gradient(135deg, black 0%, black 100%);
     }
     .login-header {
         text-align: center;
