@@ -152,7 +152,7 @@ def show_login_ui():
     
     with col1:
         st.markdown("""
-        <div style='background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);'>
+        <div style='background:black; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);'>
         """, unsafe_allow_html=True)
         st.subheader("🔐 Iniciar Sesión")
         email = st.text_input("📧 Email", placeholder="demo@cafe.com", key="login_email")
@@ -175,7 +175,7 @@ def show_login_ui():
     
     with col2:
         st.markdown("""
-        <div style='background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);'>
+        <div style='background:black; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);'>
         """, unsafe_allow_html=True)
         st.subheader("📝 Registrarse")
         new_name = st.text_input("👤 Nombre completo", placeholder="Tu nombre", key="reg_name")
