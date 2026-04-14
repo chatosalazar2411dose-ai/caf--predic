@@ -34,6 +34,21 @@ def init_session_state():
         st.session_state.show_history = False
     if 'show_recommendations' not in st.session_state:
         st.session_state.show_recommendations = False
+    # NUEVO: Inicializar modo de visualización
+    if 'modo' not in st.session_state:
+        st.session_state.modo = "visualizacion"
+    if 'df_editado' not in st.session_state:
+        st.session_state.df_editado = None
+    if 'tipo_grafica' not in st.session_state:
+        st.session_state.tipo_grafica = "scatter_3d"
+    if 'color_scheme' not in st.session_state:
+        st.session_state.color_scheme = "Viridis"
+    if 'tamaño_puntos' not in st.session_state:
+        st.session_state.tamaño_puntos = 8
+    if 'tipo_residuos' not in st.session_state:
+        st.session_state.tipo_residuos = "Puntos"
+    if 'mostrar_linea' not in st.session_state:
+        st.session_state.mostrar_linea = True
 
 init_session_state()
 
@@ -220,6 +235,47 @@ def main_app():
         test_size = st.slider("Tamaño del conjunto de prueba:", 0.1, 0.5, 0.3, 0.05, help="Proporción de datos para prueba")
         random_state = st.number_input("Semilla aleatoria:", 0, 100, 42, help="Para reproducibilidad de resultados")
         
+        # NUEVO: Selector de modo de visualización
+        st.markdown("---")
+        st.subheader("🎨 Modo de Visualización")
+        
+        modo_visualizacion = st.radio(
+            "Selecciona el modo:",
+            ["📊 Modo Visualización", "✏️ Modo Edición"],
+            help="Visualización: solo ver datos | Edición: modificar valores y personalizar gráficas"
+        )
+        
+        # Guardar el modo en session_state
+        st.session_state.modo = "edicion" if "Edición" in modo_visualizacion else "visualizacion"
+        
+        # Opciones de personalización solo en modo edición
+        if st.session_state.modo == "edicion":
+            st.markdown("---")
+            st.subheader("🎨 Personalización de Gráficas")
+            
+            st.session_state.tipo_grafica = st.selectbox(
+                "Tipo de gráfica 3D:",
+                ["scatter_3d", "surface", "line_3d"],
+                index=["scatter_3d", "surface", "line_3d"].index(st.session_state.tipo_grafica) if st.session_state.tipo_grafica in ["scatter_3d", "surface", "line_3d"] else 0
+            )
+            
+            st.session_state.color_scheme = st.selectbox(
+                "Esquema de color:",
+                ["Viridis", "Plasma", "Inferno", "Magma", "Cividis"],
+                index=["Viridis", "Plasma", "Inferno", "Magma", "Cividis"].index(st.session_state.color_scheme) if st.session_state.color_scheme in ["Viridis", "Plasma", "Inferno", "Magma", "Cividis"] else 0
+            )
+            
+            st.session_state.tamaño_puntos = st.slider("Tamaño de puntos:", 3, 15, st.session_state.tamaño_puntos)
+            
+            st.session_state.tipo_residuos = st.radio(
+                "Tipo de gráfico de residuos:",
+                ["Puntos", "Barras", "Línea"],
+                horizontal=True,
+                index=["Puntos", "Barras", "Línea"].index(st.session_state.tipo_residuos) if st.session_state.tipo_residuos in ["Puntos", "Barras", "Línea"] else 0
+            )
+            
+            st.session_state.mostrar_linea = st.checkbox("Mostrar línea de tendencia", value=st.session_state.mostrar_linea)
+        
         st.markdown("---")
         st.subheader("📋 Opciones adicionales")
         
@@ -287,9 +343,16 @@ def main_app():
         }
         df = pd.DataFrame(data)
     
+    # Usar datos editados si existen y estamos en modo edición
+    if st.session_state.modo == "edicion" and st.session_state.df_editado is not None:
+        df_actual = st.session_state.df_editado
+        st.info("✏️ Usando datos editados")
+    else:
+        df_actual = df
+    
     # Modelo
-    X = df[['altitud_msnm', 'temp_promedio_c']]
-    y = df['puntaje_calidad_1_10']
+    X = df_actual[['altitud_msnm', 'temp_promedio_c']]
+    y = df_actual['puntaje_calidad_1_10']
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
     model = LinearRegression()
@@ -311,13 +374,54 @@ def main_app():
         col1, col2 = st.columns([2, 1])
         with col1:
             st.subheader("📋 Dataset de Entrenamiento")
-            st.dataframe(df, use_container_width=True, height=300)
+            
+            if st.session_state.modo == "edicion":
+                # MODO EDICIÓN - DataFrame editable
+                st.info("✏️ Modo Edición activado - Puedes modificar los valores")
+                edited_df = st.data_editor(
+                    df_actual,
+                    use_container_width=True,
+                    height=300,
+                    num_rows="dynamic",
+                    column_config={
+                        "altitud_msnm": st.column_config.NumberColumn("Altitud (msnm)", min_value=0, max_value=4000),
+                        "temp_promedio_c": st.column_config.NumberColumn("Temperatura (°C)", min_value=0, max_value=40),
+                        "puntaje_calidad_1_10": st.column_config.NumberColumn("Puntaje Calidad", min_value=0, max_value=10, step=0.1)
+                    }
+                )
+                
+                # Botón para guardar cambios
+                col_save1, col_save2 = st.columns(2)
+                with col_save1:
+                    if st.button("💾 Guardar cambios", use_container_width=True):
+                        st.session_state.df_editado = edited_df
+                        st.success("✅ Cambios guardados temporalmente")
+                        st.rerun()
+                with col_save2:
+                    if st.button("🔄 Restaurar original", use_container_width=True):
+                        st.session_state.df_editado = None
+                        st.rerun()
+                
+                # Botón para descargar CSV
+                csv = df_actual.to_csv(index=False)
+                st.download_button(
+                    label="📥 Descargar CSV actual",
+                    data=csv,
+                    file_name="datos_cafe.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            else:
+                # MODO VISUALIZACIÓN - Solo lectura
+                st.info("👁️ Modo Visualización - Datos de solo lectura")
+                st.dataframe(df_actual, use_container_width=True, height=300)
+        
         with col2:
             st.subheader("📊 Estadísticas Descriptivas")
-            st.dataframe(df.describe().round(2), use_container_width=True)
+            st.dataframe(df_actual.describe().round(2), use_container_width=True)
         
         st.subheader("📈 Matriz de Correlación")
-        fig_corr = px.imshow(df.corr(), text_auto=True, color_continuous_scale='RdBu_r', aspect="auto")
+        fig_corr = px.imshow(df_actual.corr(), text_auto=True, color_continuous_scale='RdBu_r', aspect="auto")
         st.plotly_chart(fig_corr, use_container_width=True)
     
     with tab2:
@@ -350,11 +454,50 @@ def main_app():
     
     with tab3:
         col1, col2 = st.columns(2)
+        
         with col1:
             st.subheader("🎯 Relación 3D")
-            fig_3d = px.scatter_3d(df, x='altitud_msnm', y='temp_promedio_c', z='puntaje_calidad_1_10',
-                                   color='puntaje_calidad_1_10', title="Relación Altitud vs Temperatura vs Calidad")
+            
+            # Usar la configuración guardada en session_state
+            tipo_grafica = st.session_state.tipo_grafica
+            color_scheme = st.session_state.color_scheme
+            tamaño_puntos = st.session_state.tamaño_puntos
+            
+            if tipo_grafica == "scatter_3d":
+                fig_3d = px.scatter_3d(
+                    df_actual, 
+                    x='altitud_msnm', 
+                    y='temp_promedio_c', 
+                    z='puntaje_calidad_1_10',
+                    color='puntaje_calidad_1_10',
+                    color_continuous_scale=color_scheme.lower(),
+                    title="Relación Altitud vs Temperatura vs Calidad"
+                )
+                fig_3d.update_traces(marker=dict(size=tamaño_puntos))
+            elif tipo_grafica == "surface":
+                # Crear superficie
+                from scipy.interpolate import griddata
+                altitud_vals = np.linspace(df_actual['altitud_msnm'].min(), df_actual['altitud_msnm'].max(), 50)
+                temp_vals = np.linspace(df_actual['temp_promedio_c'].min(), df_actual['temp_promedio_c'].max(), 50)
+                altitud_grid, temp_grid = np.meshgrid(altitud_vals, temp_vals)
+                puntos = df_actual[['altitud_msnm', 'temp_promedio_c']].values
+                valores = df_actual['puntaje_calidad_1_10'].values
+                z_grid = griddata(puntos, valores, (altitud_grid, temp_grid), method='cubic')
+                
+                fig_3d = go.Figure(data=[go.Surface(z=z_grid, x=altitud_vals, y=temp_vals, colorscale=color_scheme.lower())])
+                fig_3d.update_layout(title="Superficie de Calidad")
+            else:
+                fig_3d = px.line_3d(
+                    df_actual.sort_values('altitud_msnm'),
+                    x='altitud_msnm', 
+                    y='temp_promedio_c', 
+                    z='puntaje_calidad_1_10',
+                    title="Tendencia 3D"
+                )
+            
             st.plotly_chart(fig_3d, use_container_width=True)
+            if st.session_state.modo == "edicion":
+                st.caption("💡 Haz clic derecho en la gráfica para guardar como PNG")
         
         with col2:
             st.subheader("📊 Predicciones vs Reales")
@@ -368,8 +511,33 @@ def main_app():
         
         st.subheader("📉 Análisis de Residuos")
         residuos = y_test - y_pred_test
-        fig_res = px.scatter(x=y_pred_test, y=residuos, title="Residuos vs Predicciones",
-                            labels={'x': 'Valores Predichos', 'y': 'Residuos'})
+        
+        tipo_residuos = st.session_state.tipo_residuos
+        mostrar_linea = st.session_state.mostrar_linea
+        
+        if tipo_residuos == "Puntos":
+            fig_res = px.scatter(
+                x=y_pred_test, 
+                y=residuos,
+                title="Residuos vs Predicciones",
+                labels={'x': 'Valores Predichos', 'y': 'Residuos'},
+                trendline="ols" if mostrar_linea else None
+            )
+        elif tipo_residuos == "Barras":
+            fig_res = px.bar(
+                x=range(len(residuos)), 
+                y=residuos,
+                title="Residuos por observación",
+                labels={'x': 'Observación', 'y': 'Residuo'}
+            )
+        else:
+            fig_res = px.line(
+                x=range(len(residuos)), 
+                y=residuos,
+                title="Tendencia de Residuos",
+                labels={'x': 'Observación', 'y': 'Residuo'}
+            )
+        
         fig_res.add_hline(y=0, line_dash="dash", line_color="red")
         st.plotly_chart(fig_res, use_container_width=True)
     
