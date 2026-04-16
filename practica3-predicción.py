@@ -593,46 +593,19 @@ def main_app():
             
             if prediccion_raw != prediccion:
                 st.warning(f"⚠️ Predicción ajustada de {prediccion_raw:.2f} a {prediccion:.2f}")
-
-                    st.subheader("🏷️ Clasificación")
+            
+            st.subheader("🏷️ Clasificación")
             if prediccion >= 9:
                 st.success("### 🌟 EXCELENCIA - Café de Especialidad Premium")
-                st.markdown("""
-                - **Perfil**: Acidez brillante, aroma floral
-                - **Precio estimado**: $50-80/kg
-                - **Recomendación**: Exportación a mercados especializados
-                """)
             elif prediccion >= 8:
                 st.success("### 👍 MUY BUENO - Café de Especialidad")
-                st.markdown("""
-                - **Perfil**: Balanceado, notas frutales
-                - **Precio estimado**: $30-50/kg
-                - **Recomendación**: Cafeterías de especialidad
-                """)
             elif prediccion >= 7:
                 st.info("### ✅ BUENO - Café Comercial de Alta Calidad")
-                st.markdown("""
-                - **Perfil**: Cuerpo medio, sabor limpio
-                - **Precio estimado**: $15-30/kg
-                - **Recomendación**: Mercado comercial premium
-                """)
             elif prediccion >= 6:
                 st.warning("### ⚠️ REGULAR - Café Comercial Estándar")
-                st.markdown("""
-                - **Perfil**: Sabor simple, acidez baja
-                - **Precio estimado**: $8-15/kg
-                - **Recomendación**: Mercado local
-                """)
             else:
                 st.error("### 📉 BAJO - Café de Calidad Inferior")
-                st.markdown("""
-                - **Perfil**: Defectos en taza, amargor
-                - **Precio estimado**: < $8/kg
-                - **Recomendación**: Mejorar prácticas de cultivo
-                """)
-              
-              
-            # Recomendaciones personalizadas
+            
             st.subheader("💡 Recomendaciones")
             if altitud < 1200:
                 st.info("🌱 Considerar variedades resistentes a bajas altitudes")
