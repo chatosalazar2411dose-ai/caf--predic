@@ -411,8 +411,93 @@ def main_app():
     r2_train = r2_score(y_train, y_pred_train)
     r2_test = r2_score(y_test, y_pred_test)
     
+    # ========== DATOS DE PAÍSES PARA PREDICCIONES ==========
+    paises_referencia = {
+        'Brasil': {'altitud_base': 1200, 'temperatura_base': 22, 'factor_calidad': 0.85, 'variedades': ['Bourbon', 'Typica', 'Caturra', 'Mundo Novo', 'Catuaí']},
+        'Vietnam': {'altitud_base': 1000, 'temperatura_base': 24, 'factor_calidad': 0.75, 'variedades': ['Robusta', 'Catimor', 'Arabica']},
+        'Colombia': {'altitud_base': 1600, 'temperatura_base': 20, 'factor_calidad': 0.95, 'variedades': ['Caturra', 'Colombia', 'Castillo', 'Tabi', 'Geisha']},
+        'Indonesia': {'altitud_base': 1400, 'temperatura_base': 23, 'factor_calidad': 0.80, 'variedades': ['Java', 'Kintamani', 'Toraja', 'Mandheling', 'Robusta']},
+        'Etiopía': {'altitud_base': 1800, 'temperatura_base': 18, 'factor_calidad': 0.98, 'variedades': ['Heirloom', 'Sidamo', 'Yirgacheffe', 'Harar', 'Limu']},
+        'Honduras': {'altitud_base': 1300, 'temperatura_base': 21, 'factor_calidad': 0.88, 'variedades': ['Bourbon', 'Catuai', 'IHCAFE 90', 'Lempira']},
+        'India': {'altitud_base': 1100, 'temperatura_base': 23, 'factor_calidad': 0.78, 'variedades': ['Kent', 'S795', 'Selection 9', 'Robusta']},
+        'Uganda': {'altitud_base': 1400, 'temperatura_base': 22, 'factor_calidad': 0.76, 'variedades': ['Bugisu', 'Drugar', 'Robusta']},
+        'México': {'altitud_base': 1300, 'temperatura_base': 21, 'factor_calidad': 0.86, 'variedades': ['Bourbon', 'Typica', 'Caturra', 'Garnica', 'Costa Rica 95']},
+        'Guatemala': {'altitud_base': 1500, 'temperatura_base': 20, 'factor_calidad': 0.92, 'variedades': ['Bourbon', 'Catuai', 'Caturra', 'Pache', 'Maragogype', 'Geisha']},
+        'Perú': {'altitud_base': 1550, 'temperatura_base': 19, 'factor_calidad': 0.90, 'variedades': ['Typica', 'Caturra', 'Bourbon', 'Pache', 'Catimor', 'Geisha']},
+        'Nicaragua': {'altitud_base': 1300, 'temperatura_base': 21, 'factor_calidad': 0.87, 'variedades': ['Bourbon', 'Catuai', 'Caturra', 'Maragogype', 'Java']},
+        'Costa Rica': {'altitud_base': 1500, 'temperatura_base': 20, 'factor_calidad': 0.94, 'variedades': ['Caturra', 'Catuai', 'Villa Sarchi', 'Geisha', 'Venecia']},
+        'El Salvador': {'altitud_base': 1400, 'temperatura_base': 21, 'factor_calidad': 0.89, 'variedades': ['Bourbon', 'Pacas', 'Pacamara', 'Sarchimor']},
+        'Kenia': {'altitud_base': 1700, 'temperatura_base': 19, 'factor_calidad': 0.96, 'variedades': ['SL28', 'SL34', 'Ruiru 11', 'Batian', 'K7']},
+        'Tanzania': {'altitud_base': 1500, 'temperatura_base': 20, 'factor_calidad': 0.88, 'variedades': ['Bourbon', 'Kent', 'Typica', 'N39']},
+        'Ecuador': {'altitud_base': 1300, 'temperatura_base': 22, 'factor_calidad': 0.85, 'variedades': ['Typica', 'Bourbon', 'Caturra', 'Catimor']},
+        'Jamaica': {'altitud_base': 1200, 'temperatura_base': 22, 'factor_calidad': 0.93, 'variedades': ['Typica', 'Bourbon', 'Geisha', 'Blue Mountain']}
+    }
+    
+    # ========== DATOS DE PAÍSES PRODUCTORES PARA TAB5 ==========
+    paises_cafe = pd.DataFrame({
+        'País': ['Brasil', 'Vietnam', 'Colombia', 'Indonesia', 'Etiopía', 'Honduras', 'India', 'Uganda', 'México', 'Guatemala',
+                 'Perú', 'Nicaragua', 'Costa Rica', 'El Salvador', 'Kenia', 'Tanzania', 'Ecuador', 'Camerún', 'Costa de Marfil', 'Jamaica'],
+        'Continente': ['América del Sur', 'Asia', 'América del Sur', 'Asia', 'África', 'América Central', 'Asia', 'África', 
+                       'América del Norte', 'América Central', 'América del Sur', 'América Central', 'América Central', 
+                       'América Central', 'África', 'África', 'América del Sur', 'África', 'África', 'América Central'],
+        'Producción (miles de sacos)': [58000, 32000, 14000, 12000, 8000, 6500, 5800, 5000, 4200, 3800,
+                                        3600, 2800, 1800, 1200, 1500, 1400, 1100, 900, 800, 500],
+        'Altitud óptima (msnm)': ['800-2000', '800-1500', '1200-2000', '1000-1800', '1500-2200', '1000-1600', '800-1500', '1200-1900', 
+                                  '800-1500', '1200-1800', '1200-1900', '1000-1600', '1200-1800', '1000-1600', '1400-2200', '1200-2000',
+                                  '800-1800', '1000-1600', '800-1500', '800-1500'],
+        'Tipos de Café': [
+            'Arábica (Bourbon, Typica, Caturra, Mundo Novo), Robusta',
+            'Robusta (principalmente), Arábica (Catimor)',
+            'Arábica (Caturra, Colombia, Castillo, Tabi, Geisha)',
+            'Robusta (90%), Arábica (Java, Kintamani, Toraja, Mandheling)',
+            'Arábica (Heirloom, Sidamo, Yirgacheffe, Harar, Limu)',
+            'Arábica (Bourbon, Catuai, IHCAFE 90, Lempira)',
+            'Robusta (70%), Arábica (Kent, S795, Selection 9)',
+            'Robusta (80%), Arábica (Bugisu, Drugar)',
+            'Arábica (Bourbon, Typica, Caturra, Garnica, Costa Rica 95)',
+            'Arábica (Bourbon, Catuai, Caturra, Pache, Maragogype, Geisha)',
+            'Arábica (Typica, Caturra, Bourbon, Pache, Catimor, Geisha)',
+            'Arábica (Bourbon, Catuai, Caturra, Maragogype, Java)',
+            'Arábica (Caturra, Catuai, Villa Sarchi, Geisha, Venecia)',
+            'Arábica (Bourbon, Pacas, Pacamara, Sarchimor)',
+            'Arábica (SL28, SL34, Ruiru 11, Batian, K7)',
+            'Arábica (Bourbon, Kent, Typica, N39), Robusta',
+            'Arábica (Typica, Bourbon, Caturra, Catimor), Robusta',
+            'Robusta (principalmente), Arábica (Java)',
+            'Robusta (95%), Arábica (5%)',
+            'Arábica (Typica, Bourbon, Geisha, Blue Mountain)'
+        ],
+        'Perfil de sabor': [
+            'Dulce, chocolate, frutos secos, caramelo',
+            'Terroso, fuerte, amaderado, cuerpo alto',
+            'Suave, afrutado, caramelo, notas cítricas',
+            'Terroso, herbal, especiado, chocolate oscuro',
+            'Floral, cítrico, vinoso, frutos rojos, té',
+            'Dulce, chocolate, frutal, notas de caramelo',
+            'Especiado, terroso, chocolate, cardamomo',
+            'Terroso, chocolate, cuerpo pesado',
+            'Chocolate, nuez, caramelo, cítricos suaves',
+            'Chocolate, frutal, floral, notas de especias',
+            'Ácido, floral, chocolate, cítrico brillante',
+            'Frutal, chocolate, dulce, notas de nuez',
+            'Cítrico, floral, dulce, cuerpo ligero',
+            'Dulce, chocolate, notas de frutas tropicales',
+            'Vinoso, frutal, complejo, grosella negra',
+            'Ácido, frutal, notas de ciruela, chocolate',
+            'Ácido, floral, chocolate, notas cítricas',
+            'Terroso, fuerte, amaderado, nuez',
+            'Terroso, amaderado, chocolate',
+            'Suave, floral, cítrico, chocolate, nuez'
+        ],
+        'Tostado recomendado': [
+            'Medio a Medio-Oscuro', 'Oscuro', 'Claro a Medio', 'Medio-Oscuro', 'Claro', 'Medio', 
+            'Medio a Oscuro', 'Oscuro', 'Medio', 'Claro a Medio', 'Claro', 'Medio', 'Claro', 
+            'Medio', 'Claro', 'Medio', 'Claro a Medio', 'Oscuro', 'Oscuro', 'Claro'
+        ]
+    })
+    
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Datos", "🤖 Modelo", "📈 Visualizaciones", "🔮 Predicciones"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Datos", "🤖 Modelo", "📈 Visualizaciones", "🔮 Predicciones", "🌍 Países Productores"])
     
     with tab1:
         col1, col2 = st.columns([2, 1])
@@ -564,55 +649,368 @@ def main_app():
         st.plotly_chart(fig_res, use_container_width=True)
     
     with tab4:
-        st.subheader("🔮 Predecir Calidad de Nuevo Lote")
+        st.subheader("🔮 Predecir Calidad de Café según País de Origen")
         
+        # Selector de país
+        col_pais, col_info = st.columns([1, 1])
+        
+        with col_pais:
+            st.markdown("##### 🌍 Selecciona el país de origen")
+            pais_origen = st.selectbox(
+                "País productor:",
+                list(paises_referencia.keys()),
+                key="pais_prediccion",
+                help="Selecciona el país para ver sus características de cultivo"
+            )
+            
+            # Obtener datos del país seleccionado
+            datos_pais = paises_referencia[pais_origen]
+            
+            st.markdown("##### 📊 Características del país")
+            st.markdown(f"""
+            <div style='background: #1e1e2e; padding: 15px; border-radius: 10px; margin-top: 10px;'>
+                <small>🏔️ <strong>Altitud típica:</strong> {datos_pais['altitud_base']} msnm</small><br>
+                <small>🌡️ <strong>Temperatura media:</strong> {datos_pais['temperatura_base']}°C</small><br>
+                <small>⭐ <strong>Factor de calidad:</strong> {datos_pais['factor_calidad'] * 100:.0f}%</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_info:
+            st.markdown("##### 🌱 Variedades cultivadas")
+            variedades_html = '<div style="background: #1e1e2e; padding: 15px; border-radius: 10px;"><div style="display: flex; flex-wrap: wrap; gap: 8px;">'
+            for var in datos_pais['variedades']:
+                variedades_html += f'<span style="background: #6F4E37; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px;">🌱 {var}</span>'
+            variedades_html += '</div></div>'
+            st.markdown(variedades_html, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Entradas de usuario con valores sugeridos según el país
         col1, col2 = st.columns(2)
+        
         with col1:
-            altitud = st.number_input("Altitud (msnm)", 0.0, 3000.0, 1650.0, step=50.0)
-            variedad = st.selectbox("🌱 Variedad de Café", ["Borbón", "Caturra", "Typica", "Catuaí", "Geisha"])
+            st.markdown("##### 📍 Parámetros del Cultivo")
+            
+            altitud_sugerida = datos_pais['altitud_base']
+            
+            altitud_input = st.number_input(
+                "Altitud (msnm)",
+                min_value=0.0,
+                max_value=3000.0,
+                value=float(altitud_sugerida),
+                step=50.0,
+                help="Altitud sobre el nivel del mar",
+                key="altitud_pred"
+            )
+            
+            # Mostrar si está dentro del rango óptimo del país
+            altitud_min = altitud_sugerida - 400
+            altitud_max = altitud_sugerida + 400
+            if altitud_min <= altitud_input <= altitud_max:
+                st.caption(f"✅ Dentro del rango óptimo para {pais_origen} ({altitud_min}-{altitud_max} msnm)")
+            else:
+                st.warning(f"⚠️ Fuera del rango óptimo para {pais_origen} (recomendado: {altitud_min}-{altitud_max} msnm)")
+            
+            # Selector de variedad específica del país
+            variedad_input = st.selectbox(
+                "🌱 Variedad de Café",
+                datos_pais['variedades'],
+                key="variedad_pred",
+                help=f"Variedades típicas de {pais_origen}"
+            )
+        
         with col2:
-            temperatura = st.number_input("Temperatura promedio (°C)", 10.0, 35.0, 20.0, step=0.5)
-            humedad = st.slider("💧 Humedad relativa (%)", 60, 90, 75)
+            st.markdown("##### 🌡️ Condiciones Climáticas")
+            
+            temp_sugerida = datos_pais['temperatura_base']
+            
+            temperatura_input = st.number_input(
+                "Temperatura promedio (°C)",
+                min_value=10.0,
+                max_value=35.0,
+                value=float(temp_sugerida),
+                step=0.5,
+                help="Temperatura promedio de la zona",
+                key="temp_pred"
+            )
+            
+            # Mostrar si está dentro del rango óptimo
+            temp_min = temp_sugerida - 3
+            temp_max = temp_sugerida + 3
+            if temp_min <= temperatura_input <= temp_max:
+                st.caption(f"✅ Temperatura óptima para {pais_origen}")
+            else:
+                st.warning(f"⚠️ Temperatura fuera del rango óptimo (recomendado: {temp_min}-{temp_max}°C)")
+            
+            humedad_input = st.slider(
+                "💧 Humedad relativa (%)", 
+                60, 90, 75, 
+                help="Humedad ambiental",
+                key="humedad_pred"
+            )
+        
+        st.markdown("---")
         
         if st.button("🎯 Predecir Calidad", type="primary", use_container_width=True):
-            prediccion_raw = model.predict([[altitud, temperatura]])[0]
-            prediccion = max(0.0, min(10.0, prediccion_raw))
+            # Crear DataFrame con los nuevos datos
+            nuevo_cafe = pd.DataFrame({
+                'altitud_msnm': [altitud_input],
+                'temp_promedio_c': [temperatura_input]
+            })
+            
+            # Hacer predicción
+            puntaje_predicho_raw = model.predict(nuevo_cafe)[0]
+            
+            # Ajustar puntaje según el factor de calidad del país
+            factor_pais = datos_pais['factor_calidad']
+            puntaje_ajustado_por_pais = puntaje_predicho_raw * factor_pais
+            
+            # Limitar entre 0 y 10
+            puntaje_predicho = max(0.0, min(10.0, puntaje_ajustado_por_pais))
+            puntaje_sin_ajuste = max(0.0, min(10.0, puntaje_predicho_raw))
             
             st.markdown("---")
             st.subheader("📋 Resultado de la Evaluación")
             
-            col_a, col_b, col_c = st.columns(3)
+            # Mostrar información del país
+            st.info(f"🌍 **País de origen:** {pais_origen} | 🌱 **Variedad:** {variedad_input}")
+            
+            # Métricas en columnas
+            col_a, col_b, col_c, col_d = st.columns(4)
             with col_a:
-                st.metric("📍 Altitud", f"{altitud:.0f} msnm")
+                st.metric("📍 Altitud", f"{altitud_input:.0f} msnm")
             with col_b:
-                st.metric("🌡️ Temperatura", f"{temperatura:.1f}°C")
+                st.metric("🌡️ Temperatura", f"{temperatura_input:.1f}°C")
             with col_c:
-                st.metric("🎯 Calidad Predicha", f"{prediccion:.2f}/10")
+                st.metric("🌍 Factor País", f"{factor_pais * 100:.0f}%")
+            with col_d:
+                st.metric("🎯 Calidad Final", f"{puntaje_predicho:.2f}/10")
             
-            st.progress(prediccion/10)
+            # Barra de progreso
+            st.progress(puntaje_predicho / 10.0)
             
-            if prediccion_raw != prediccion:
-                st.warning(f"⚠️ Predicción ajustada de {prediccion_raw:.2f} a {prediccion:.2f}")
+            # Mostrar comparación con y sin ajuste por país
+            if abs(puntaje_sin_ajuste - puntaje_predicho) > 0.1:
+                st.caption(f"📊 Predicción base: {puntaje_sin_ajuste:.2f} | Ajustada por país: {puntaje_predicho:.2f}")
             
+            # Información adicional sobre el país
+            with st.expander(f"ℹ️ Información sobre el café de {pais_origen}"):
+                st.markdown(f"""
+                **🌱 {pais_origen} - Datos de cultivo típicos:**
+                - Altitud óptima: {altitud_sugerida - 400} - {altitud_sugerida + 400} msnm
+                - Temperatura óptima: {temp_sugerida - 3} - {temp_sugerida + 3}°C
+                - Variedades principales: {', '.join(datos_pais['variedades'])}
+                
+                **💡 Recomendación para {variedad_input}:**
+                - Tostado recomendado: {'Claro a Medio' if factor_pais > 0.9 else 'Medio a Oscuro'}
+                - Perfil esperado: {'Afruitado y floral' if factor_pais > 0.9 else 'Cuerpo medio y chocolate'}
+                """)
+            
+            # Clasificación
             st.subheader("🏷️ Clasificación")
-            if prediccion >= 9:
+            
+            if puntaje_predicho >= 9:
                 st.success("### 🌟 EXCELENCIA - Café de Especialidad Premium")
-            elif prediccion >= 8:
+                st.markdown(f"""
+                - **Origen:** {pais_origen} - {variedad_input}
+                - **Perfil**: Acidez brillante, aroma floral, notas frutales
+                - **Precio estimado**: $50-80/kg
+                - **Recomendación**: Exportación a mercados especializados
+                """)
+            elif puntaje_predicho >= 8:
                 st.success("### 👍 MUY BUENO - Café de Especialidad")
-            elif prediccion >= 7:
+                st.markdown(f"""
+                - **Origen:** {pais_origen} - {variedad_input}
+                - **Perfil**: Balanceado, notas frutales, cuerpo medio
+                - **Precio estimado**: $30-50/kg
+                - **Recomendación**: Cafeterías de especialidad
+                """)
+            elif puntaje_predicho >= 7:
                 st.info("### ✅ BUENO - Café Comercial de Alta Calidad")
-            elif prediccion >= 6:
+                st.markdown(f"""
+                - **Origen:** {pais_origen}
+                - **Perfil**: Cuerpo medio, sabor limpio, acidez moderada
+                - **Precio estimado**: $15-30/kg
+                - **Recomendación**: Mercado comercial premium
+                """)
+            elif puntaje_predicho >= 6:
                 st.warning("### ⚠️ REGULAR - Café Comercial Estándar")
+                st.markdown(f"""
+                - **Perfil**: Sabor simple, acidez baja
+                - **Precio estimado**: $8-15/kg
+                - **Recomendación**: Mercado local
+                """)
             else:
                 st.error("### 📉 BAJO - Café de Calidad Inferior")
+                st.markdown("""
+                - **Perfil**: Defectos en taza, amargor
+                - **Precio estimado**: < $8/kg
+                - **Recomendación**: Mejorar prácticas de cultivo
+                """)
             
-            st.subheader("💡 Recomendaciones")
-            if altitud < 1200:
-                st.info("🌱 Considerar variedades resistentes a bajas altitudes")
-            if temperatura > 25:
-                st.info("☀️ Implementar sombra para reducir temperatura")
-            if prediccion < 7:
-                st.info("📊 Revisar prácticas de cosecha y fermentación")
+            # Recomendaciones personalizadas según el país
+            st.subheader("💡 Recomendaciones Personalizadas")
+            
+            col_rec1, col_rec2 = st.columns(2)
+            
+            with col_rec1:
+                if altitud_input < altitud_sugerida - 400:
+                    st.info(f"🌱 **Altitud baja para {pais_origen}:** Considerar variedades más resistentes o cultivo en zonas más altas")
+                elif altitud_input > altitud_sugerida + 400:
+                    st.info(f"⛰️ **Altitud alta para {pais_origen}:** Proteger cultivos de temperaturas extremas")
+                else:
+                    st.success(f"✅ Altitud óptima para café de {pais_origen}")
+                
+                if temperatura_input > temp_sugerida + 3:
+                    st.info("☀️ **Temperatura alta:** Implementar sombra con árboles de leguminosas")
+                elif temperatura_input < temp_sugerida - 3:
+                    st.info("❄️ **Temperatura baja:** Proteger los cultivos de heladas")
+                else:
+                    st.success(f"✅ Temperatura óptima para {pais_origen}")
+            
+            with col_rec2:
+                if puntaje_predicho < 7:
+                    st.info("📊 **Revisar prácticas:** Cosecha selectiva y fermentación controlada")
+                
+                # Recomendación según el país
+                if pais_origen == 'Colombia':
+                    st.info("🇨🇴 **Recomendación Colombia:** Cosecha manual selectiva para preservar calidad")
+                elif pais_origen == 'Etiopía':
+                    st.info("🇪🇹 **Recomendación Etiopía:** Procesamiento natural para realzar notas frutales")
+                elif pais_origen == 'Brasil':
+                    st.info("🇧🇷 **Recomendación Brasil:** Control estricto de fermentación")
+                elif pais_origen == 'Costa Rica':
+                    st.info("🇨🇷 **Recomendación Costa Rica:** Beneficio húmedo de alta calidad")
+                else:
+                    st.info(f"🌍 **Recomendación {pais_origen}:** Mantener trazabilidad completa del lote")
+    
+    with tab5:
+        st.subheader("🌍 Países Productores de Café")
+        st.markdown("---")
+        
+        # Mostrar tabla resumen
+        st.dataframe(paises_cafe[['País', 'Continente', 'Producción (miles de sacos)', 'Tipos de Café']], 
+                     use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
+        
+        # Selector de país con imagen
+        col_sel1, col_sel2 = st.columns([1, 2])
+        
+        with col_sel1:
+            st.subheader("🇺🇳 Selecciona un país")
+            pais_seleccionado = st.selectbox("", paises_cafe['País'].tolist(), label_visibility="collapsed", key="pais_tab5")
+        
+        if pais_seleccionado:
+            pais_data = paises_cafe[paises_cafe['País'] == pais_seleccionado].iloc[0]
+            
+            # Mostrar información detallada del país seleccionado
+            st.markdown(f"""
+            <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+                        padding: 25px; border-radius: 15px; margin: 10px 0; border: 1px solid #6F4E37;'>
+                <h2 style='color: #6F4E37; text-align: center;'>☕ {pais_seleccionado}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Métricas principales
+            col_met1, col_met2, col_met3, col_met4 = st.columns(4)
+            with col_met1:
+                st.metric("🌍 Continente", pais_data['Continente'])
+            with col_met2:
+                st.metric("📦 Producción", f"{pais_data['Producción (miles de sacos)']:,.0f} miles de sacos")
+            with col_met3:
+                st.metric("⛰️ Altitud óptima", pais_data['Altitud óptima (msnm)'])
+            with col_met4:
+                st.metric("🔥 Tostado recomendado", pais_data['Tostado recomendado'])
+            
+            # Tipos de Café (sección destacada)
+            st.markdown("---")
+            st.markdown("## 🌱 **Tipos de Café que cultiva**")
+            
+            # Mostrar tipos de café en formato de tarjetas
+            tipos_cafe = pais_data['Tipos de Café'].split(',')
+            
+            cols_tipos = st.columns(min(len(tipos_cafe), 4))
+            for i, tipo in enumerate(tipos_cafe):
+                with cols_tipos[i % 4]:
+                    st.markdown(f"""
+                    <div style='background: #2d2d44; padding: 12px; border-radius: 10px; text-align: center; margin: 5px; border-left: 4px solid #6F4E37;'>
+                        <strong style='color: #D2691E;'>🌱 {tipo.strip()}</strong>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # Perfil de sabor y características
+            col_sabor1, col_sabor2 = st.columns(2)
+            
+            with col_sabor1:
+                st.markdown(f"""
+                <div style='background: #1e1e2e; padding: 20px; border-radius: 12px; height: 100%;'>
+                    <h3 style='color: #6F4E37;'>👃 Perfil de Sabor</h3>
+                    <p style='font-size: 16px;'>{pais_data['Perfil de sabor']}</p>
+                    <hr>
+                    <h4>🎯 Notas predominantes:</h4>
+                    <ul>
+                """, unsafe_allow_html=True)
+                
+                # Extraer notas de sabor
+                notas = [n.strip() for n in pais_data['Perfil de sabor'].split(',')]
+                for nota in notas[:5]:
+                    st.markdown(f"<li>✨ {nota}</li>", unsafe_allow_html=True)
+                
+                st.markdown("</ul></div>", unsafe_allow_html=True)
+            
+            with col_sabor2:
+                st.markdown(f"""
+                <div style='background: #1e1e2e; padding: 20px; border-radius: 12px; height: 100%;'>
+                    <h3 style='color: #6F4E37;'>🍵 Características del Café</h3>
+                    <p><strong>🏆 Variedades principales:</strong><br>{pais_data['Tipos de Café']}</p>
+                    <hr>
+                    <p><strong>🔥 Tostado ideal:</strong> {pais_data['Tostado recomendado']}</p>
+                    <p><strong>⛰️ Altitud de cultivo:</strong> {pais_data['Altitud óptima (msnm)']} msnm</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Gráfico de producción por país
+        st.markdown("---")
+        st.subheader("📊 Producción de Café por País")
+        
+        top_n = st.slider("Mostrar top N países:", 5, 20, 10, key="top_paises")
+        paises_top = paises_cafe.nlargest(top_n, 'Producción (miles de sacos)')
+        
+        fig_produccion = px.bar(paises_top, 
+                                x='País', 
+                                y='Producción (miles de sacos)',
+                                color='Continente',
+                                title=f"Top {top_n} Países Productores de Café",
+                                text='Producción (miles de sacos)',
+                                color_discrete_sequence=px.colors.qualitative.Set2)
+        fig_produccion.update_traces(textposition='outside')
+        fig_produccion.update_layout(height=500)
+        st.plotly_chart(fig_produccion, use_container_width=True)
+        
+        # Gráfico por continente
+        col_graf1, col_graf2 = st.columns(2)
+        
+        with col_graf1:
+            st.subheader("🌎 Producción por Continente")
+            produccion_continente = paises_cafe.groupby('Continente')['Producción (miles de sacos)'].sum().reset_index()
+            fig_continente = px.pie(produccion_continente, 
+                                    values='Producción (miles de sacos)', 
+                                    names='Continente',
+                                    title="Distribución por Continente",
+                                    hole=0.3,
+                                    color_discrete_sequence=px.colors.qualitative.Set3)
+            st.plotly_chart(fig_continente, use_container_width=True)
+        
+        with col_graf2:
+            st.subheader("🏆 Principales Productores")
+            top_5 = paises_cafe.nlargest(5, 'Producción (miles de sacos)')
+            fig_top5 = px.bar(top_5, x='País', y='Producción (miles de sacos)', 
+                              color='País', title="Top 5 Productores Mundiales",
+                              text='Producción (miles de sacos)')
+            fig_top5.update_traces(textposition='outside')
+            fig_top5.update_layout(showlegend=False)
+            st.plotly_chart(fig_top5, use_container_width=True)
     
     # Mostrar historial
     if st.session_state.get('show_history', False):
